@@ -105,8 +105,8 @@ Resources:
                             logger.info("attempt number %d", attempt + 1)
                             time.sleep(5)  
             
-                entities = event.get("entities")
-                resources = event.get("resources")
+                entities = event["entities"]
+                resources = event["resources"]
                 if(type(entities) == list && type(resources) == list and list(map(lambda x: x.get("entityValue"), entities)).sort() == resources.sort):
                     del event[""entities"]
                     del event[""resources"]
