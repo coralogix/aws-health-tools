@@ -79,30 +79,44 @@ Resources:
             logger.setLevel(logging.INFO)
 
             def lambda_handler(event, context):
-                message = {
-                    "privateKey": str(PRIVATE_KEY),
-                    "applicationName": str(APP_NAME),
-                    "subsystemName": str(SUB_SYSTEM),
-                    "logEntries": [{"timestamp": (time.time() * 1000), "severity": WARN, "text": event}]
-                }
-                jsondata = json.dumps(message).encode('utf-8')
-                for attempt in range(int(RETRIES)):
-                    try:
-                        req = Request(CORALOGIX_LOG_URL)
-                        req.add_header('Content-Type', 'application/json; charset=utf-8')
-                        req.add_header('Content-Length', len(jsondata))
-                        response = urlopen(req, data=jsondata,timeout=TIMEOUT)
-                        if response.getcode() == 200:
-                            logger.info("Health log published to Coralogix successfully 200 OK")
-                            return True
-                        else:
-                            logger.error("health log publish failed, status code %d, %b", response.getcode(), response.read)
-                    except urllib.error.URLError as e:
-                        logger.error("URL Error %s", e)
-                    except urllib.error.HTTPError as e:
-                        logger.error("HTTP Error %s", e)
-                    logger.info("attempt number %d", attempt + 1)
-                    time.sleep(5)
+                def send(e):
+                    message = {
+                            "privateKey": str(PRIVATE_KEY),
+                            "applicationName": str(APP_NAME),
+                            "subsystemName": str(SUB_SYSTEM),
+                            "logEntries": [{"timestamp": (time.time() * 1000), "severity": WARN, "text": event}]
+                        }
+                        jsondata = json.dumps(message).encode('utf-8')
+                        for attempt in range(int(RETRIES)):
+                            try:
+                                req = Request(CORALOGIX_LOG_URL)
+                                req.add_header('Content-Type', 'application/json; charset=utf-8')
+                                req.add_header('Content-Length', len(jsondata))
+                                response = urlopen(req, data=jsondata,timeout=TIMEOUT)
+                                if response.getcode() == 200:
+                                    logger.info("Health log published to Coralogix successfully 200 OK")
+                                    return True
+                                else:
+                                    logger.error("health log publish failed, status code %d, %b", response.getcode(), response.read)
+                            except urllib.error.URLError as e:
+                                logger.error("URL Error %s", e)
+                            except urllib.error.HTTPError as e:
+                                logger.error("HTTP Error %s", e)
+                            logger.info("attempt number %d", attempt + 1)
+                            time.sleep(5)  
+            
+                entities = event.get("entities")
+                resources = event.get("resources")
+                if(type(entities) == list && type(resources) == list and list(map(lambda x: x.get("entityValue"), entities)).sort() == resources.sort):
+                    del event[""entities"]
+                    del event[""resources"]
+                    for entity in entities:
+                        event["entity"] = entity
+                        event["resource"] = resource
+                        event.entityie
+                        send(event)
+                else:
+                    send(event)
       Environment:
         Variables:
           CORALOGIX_LOG_URL: !Ref CoralogixLogURL
